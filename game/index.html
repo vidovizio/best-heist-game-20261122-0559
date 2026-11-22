@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GILDED AVIARY — a midnight heist in three floors</title>
+<meta name="description" content="A top-down heist: cross three floors of a private collection, read the guards' lamp cones and the camera sweeps, lift the golden bird and leave through the green door.">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #04070d;
+    overflow: hidden;
+    height: 100%;
+  }
+  #game {
+    display: block;
+    image-rendering: auto;
+    box-shadow: 0 0 60px rgba(232, 194, 94, 0.08);
+    cursor: crosshair;
+  }
+  #boot {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e8c25e;
+    font: bold 14px "Trebuchet MS", system-ui, sans-serif;
+    letter-spacing: 0.18em;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <canvas id="game" width="1280" height="800" aria-label="Gilded Aviary, a top-down heist game"></canvas>
+  <div id="boot">LOADING THE COLLECTION…</div>
+  <noscript>Gilded Aviary needs JavaScript enabled: it is a plain canvas game with no network requests.</noscript>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
