@@ -35,14 +35,20 @@ if (!existsSync(join(gameSrc, 'index.html'))) {
   throw new Error(`main.ts: no game/index.html beside ${here} — nothing to hand in`);
 }
 
+// Refuse a broken entry before touching the output: nothing half-written is ever handed in.
+checkTrees(gameSrc, shotsSrc);
+
 // The output may hold a previous run's files (the grader starts clean, a local rerun may not);
 // clear the two trees this program owns so the bytes depend only on the repository.
 mkdirSync(out, { recursive: true });
 for (const name of ['game', 'screenshots']) rmSync(join(out, name), { recursive: true, force: true });
 
+// Nothing below the cap check should change a file's size or name; measuring again is cheap and
+// proves the copy, not just the source, is what the scorer will read.
 cpSync(gameSrc, join(out, 'game'), { recursive: true });
 mkdirSync(join(out, 'screenshots'), { recursive: true });
 if (existsSync(shotsSrc)) cpSync(shotsSrc, join(out, 'screenshots'), { recursive: true });
+const copy = checkTrees(join(out, 'game'), join(out, 'screenshots'));
 
 /** Reads an image's pixel size from its own header: PNG's IHDR, or JPEG's first SOFn frame. */
 function imageSize(buf: Buffer): { w: number; h: number } | null {
@@ -65,32 +71,39 @@ function imageSize(buf: Buffer): { w: number; h: number } | null {
   return null;
 }
 
-/** Fails the run when the copied game/ or screenshots/ breaks a cap the scorer checks. */
-function checkOutput(): { files: number; bytes: number; shots: string[] } {
+/**
+ * Fails the run when a game tree or screenshot folder breaks a cap the scorer checks.
+ * Called twice: on the repository's own trees before anything is written (a broken entry is
+ * refused with nothing left on disk), then on what was actually written.
+ */
+function checkTrees(gameDir: string, shotsDir: string): { files: number; bytes: number; shots: string[] } {
   let files = 0;
   let bytes = 0;
-  const walk = (dir: string): void => {
+  const walk = (dir: string, root: string): void => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name);
-      const rel = full.slice(join(out, 'game').length + 1);
+      const rel = full.slice(root.length + 1);
       if (Buffer.byteLength(rel) > CAPS.game_path_max_bytes) {
         throw new Error(`game/ path over ${CAPS.game_path_max_bytes} bytes: ${rel}`);
       }
-      const st = statSync(full);
+      if (entry.isDirectory()) {
+        walk(full, root);
+        continue;
+      }
       files += 1;
-      if (st.isDirectory()) walk(full);
-      else bytes += st.size;
+      bytes += statSync(full).size;
     }
   };
-  walk(join(out, 'game'));
-  if (files > CAPS.game_max_files) throw new Error(`game/ holds ${files} entries, cap ${CAPS.game_max_files}`);
+  walk(gameDir, gameDir);
+  if (files > CAPS.game_max_files) throw new Error(`game/ holds ${files} files, cap ${CAPS.game_max_files}`);
   if (bytes > CAPS.game_max_bytes) throw new Error(`game/ is ${bytes} bytes, cap ${CAPS.game_max_bytes}`);
 
-  const shotsDir = join(out, 'screenshots');
-  const shots = readdirSync(shotsDir)
-    .filter((n) => !n.startsWith('.'))
-    .filter((n) => statSync(join(shotsDir, n)).isFile())
-    .sort();
+  const shots = existsSync(shotsDir)
+    ? readdirSync(shotsDir)
+        .filter((n) => !n.startsWith('.'))
+        .filter((n) => statSync(join(shotsDir, n)).isFile())
+        .sort()
+    : [];
   if (shots.length < 3 || shots.length > CAPS.screenshots.max) {
     throw new Error(`screenshots/ holds ${shots.length}, the gate takes 3 to ${CAPS.screenshots.max}`);
   }
@@ -113,7 +126,8 @@ function checkOutput(): { files: number; bytes: number; shots: string[] } {
   return { files, bytes, shots };
 }
 
-const copy = checkOutput();
+// Refuse a broken entry before touching the output: no half-written hand-in, ever.
+checkTrees(gameSrc, shotsSrc);
 
 const dossier = buildDossier(out, CAPS);
 if (dossier.byteLength > CAPS.dossier_max_bytes) {
