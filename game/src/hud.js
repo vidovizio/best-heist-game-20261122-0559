@@ -26,7 +26,7 @@ function drawAlarmMeter(ctx, game, y0) {
   ctx.textAlign = 'left';
   ctx.font = `bold 11px ${FONT}`;
   ctx.fillStyle = THEME.dim;
-  ctx.fillText('ALARM', 28, y0 + 27);
+  ctx.fillText('DETECTION', 28, y0 + 27);
   const barX = 92;
   const barY = y0 + 14;
   const barW = 540;
@@ -119,9 +119,9 @@ function drawRunStats(ctx, game, y0) {
 /** The four tool slots, their prices and counts, with the armed one highlighted. */
 function drawBelt(ctx, game, y0) {
   const bx = 28;
-  const by = y0 + 66;
+  const by = y0 + 62;
   const bw = 150;
-  const bh = 40;
+  const bh = 36;
   for (let i = 0; i < TOOLS.length; i++) {
     const t = TOOLS[i];
     const x = bx + i * (bw + 10);
@@ -150,7 +150,7 @@ function drawBelt(ctx, game, y0) {
   ctx.font = `10px ${FONT}`;
   ctx.fillStyle = 'rgba(134,152,184,0.85)';
   ctx.fillText(`BELT COST $${game.beltCost.toLocaleString('en-US')} off the haul  ·  1-4 arm, click to place  ·  Shift creep  ·  E grab  ·  P pause  ·  M mute`,
-    bx, y0 + 117);
+    bx, y0 + 109);
 }
 
 /** The whole readout band. */
